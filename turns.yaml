@@ -1,0 +1,17 @@
+people:
+  alice:
+    name: Alice
+    ooo:
+      - !Day 2025-09-15
+      - !Period
+        from: 2025-08-23
+        to: 2025-09-07
+  bob:
+    name: Bob
+  charlie:
+    name: Charlie
+schedule:
+  from: 2025-08-01
+  to: 2025-09-30
+  algo: !Greedy
+    turn_length_days: 7
