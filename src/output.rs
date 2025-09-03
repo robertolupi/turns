@@ -2,6 +2,13 @@ use crate::input::Person;
 use chrono::{NaiveDate, TimeDelta};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ScheduleError {
+    #[error("No one is available on {0}")]
+    NoOneAvailable(NaiveDate),
+}
 
 #[derive(Debug)]
 pub struct Assignment {
