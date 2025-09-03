@@ -18,12 +18,12 @@ pub enum ConfigError {
     InvalidDateRange,
     #[error("Turn length in days must be positive")]
     InvalidTurnLength,
-    #[error("OOO period is invalid for person {person_name}: `from` date must be before `to` date")]
-    InvalidOOOPeriod { person_name: String },
+    #[error("Ooo period is invalid for person {person_name}: `from` date must be before `to` date")]
+    InvalidOooPeriod { person_name: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum OOO {
+pub enum Ooo {
     Day(NaiveDate),
     Period { from: NaiveDate, to: NaiveDate },
 }
@@ -37,7 +37,7 @@ pub enum Preference {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Person {
     pub(crate) name: String,
-    pub(crate) ooo: Option<Vec<OOO>>,
+    pub(crate) ooo: Option<Vec<Ooo>>,
     pub(crate) preferences: Option<Vec<Preference>>,
 }
 
@@ -84,13 +84,12 @@ impl Config {
             }
             if let Some(ooos) = &person.ooo {
                 for ooo in ooos {
-                    if let OOO::Period { from, to } = ooo {
-                        if from >= to {
-                            return Err(ConfigError::InvalidOOOPeriod {
+                    if let Ooo::Period { from, to } = ooo
+                        && from >= to {
+                            return Err(ConfigError::InvalidOooPeriod {
                                 person_name: person.name.clone(),
                             });
                         }
-                    }
                 }
             }
         }
@@ -213,7 +212,7 @@ schedule:
 "#;
         let file = write_config_to_tempfile(config);
         let result = parse(file.path());
-        assert!(matches!(result, Err(ConfigError::InvalidOOOPeriod { .. })));
+        assert!(matches!(result, Err(ConfigError::InvalidOooPeriod { .. })));
     }
 
     #[test]

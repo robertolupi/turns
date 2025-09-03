@@ -22,7 +22,7 @@ pub fn schedule(
             }
         }
         assignee = candidate;
-        let start = current_day.clone();
+        let start = current_day;
         let last_day = current_day
             .checked_add_days(Days::new(turn_length_days.into()))
             .unwrap();
@@ -35,15 +35,15 @@ pub fn schedule(
         }
         turns.push(Assignment {
             person: candidate,
-            start: start,
-            end: current_day.clone(),
+            start,
+            end: current_day,
         });
         assignee = (assignee + 1) % people.len();
     }
 
     Ok(Schedule {
-        people: people,
-        turns: turns,
+        people,
+        turns,
     })
 }
 

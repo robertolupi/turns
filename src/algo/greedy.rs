@@ -1,4 +1,4 @@
-use crate::input::Person;
+use crate::input::{Person, PreferenceType};
 use crate::output::{Assignment, Schedule};
 use chrono::{Days, NaiveDate, TimeDelta};
 
@@ -8,8 +8,12 @@ pub fn schedule(
     people: Vec<Person>,
     start: NaiveDate,
     end: NaiveDate,
-    turn_length_days: u8) -> Result<Schedule, ScheduleError> {
+    turn_length_days: u8,
+    preference_weight: Option<u8>,
+) -> Result<Schedule, ScheduleError> {
     let mut turns = vec![];
+
+    let preference_weight = preference_weight.unwrap_or(turn_length_days);
 
     let mut current_day = start;
     let mut load: Vec<TimeDelta> = people.iter().map(|_| TimeDelta::zero()).collect();
@@ -25,8 +29,25 @@ pub fn schedule(
             if Some(i) == assignee {
                 continue;
             }
-            if load[i] < min_load {
-                min_load = load[i];
+
+            let mut modified_load = load[i];
+            let mut d = current_day;
+            while d < current_day.checked_add_days(Days::new(turn_length_days.into())).unwrap() && d < end {
+                if let Some(pref) = person.preferences.get(&d) {
+                    match pref {
+                        PreferenceType::Want => {
+                            modified_load -= TimeDelta::days(preference_weight.into());
+                        }
+                        PreferenceType::NotWant => {
+                            modified_load += TimeDelta::days(preference_weight.into());
+                        }
+                    }
+                }
+                d = d.succ_opt().unwrap();
+            }
+
+            if modified_load < min_load {
+                min_load = modified_load;
                 candidate = i;
             }
         }
@@ -34,7 +55,7 @@ pub fn schedule(
             return Err(ScheduleError::NoOneAvailable(current_day));
         }
         assignee = Some(candidate);
-        let start = current_day.clone();
+        let start = current_day;
         let last_day = current_day
             .checked_add_days(Days::new(turn_length_days.into()))
             .unwrap();
@@ -46,15 +67,15 @@ pub fn schedule(
         }
         turns.push(Assignment {
             person: assignee.unwrap(),
-            start: start,
-            end: current_day.clone(),
+            start,
+            end: current_day,
         });
         load[assignee.unwrap()] = load[assignee.unwrap()] + (current_day - start);
     }
     
     Ok(Schedule{
-        people: people,
-        turns: turns,
+        people,
+        turns,
     })
 }
 
@@ -81,7 +102,7 @@ mod tests {
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(2025, 1, 5).unwrap();
-        let schedule = schedule(people, start, end, 2).unwrap();
+        let schedule = schedule(people, start, end, 2, None).unwrap();
         assert_eq!(schedule.turns.len(), 2);
         assert_eq!(schedule.turns[0].person, 0);
         assert_eq!(schedule.turns[1].person, 1);
@@ -105,7 +126,7 @@ mod tests {
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(2025, 1, 5).unwrap();
-        let schedule = schedule(people, start, end, 2).unwrap();
+        let schedule = schedule(people, start, end, 2, None).unwrap();
         assert_eq!(schedule.turns.len(), 2);
         assert_eq!(schedule.turns[0].person, 1); // Bob starts because Alice is OOO
         assert_eq!(schedule.turns[1].person, 0);
@@ -127,7 +148,7 @@ mod tests {
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(2025, 1, 10).unwrap();
-        let schedule = schedule(people, start, end, 3).unwrap();
+        let schedule = schedule(people, start, end, 3, None).unwrap();
         // Expected schedule:
         // Alice: 1/1 - 1/4 (3 days)
         // Bob: 1/4 - 1/7 (3 days)
@@ -156,7 +177,32 @@ mod tests {
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(2025, 1, 5).unwrap();
-        let result = schedule(people, start, end, 2);
+        let result = schedule(people, start, end, 2, None);
         assert!(matches!(result, Err(ScheduleError::NoOneAvailable(_))));
+    }
+
+    #[test]
+    fn test_with_preferences() {
+        let mut alice_prefs = HashMap::new();
+        alice_prefs.insert(NaiveDate::from_ymd_opt(2025, 1, 1).unwrap(), PreferenceType::Want);
+
+        let people = vec![
+            Person {
+                name: "Alice".to_string(),
+                ooo: HashSet::new(),
+                preferences: alice_prefs,
+            },
+            Person {
+                name: "Bob".to_string(),
+                ooo: HashSet::new(),
+                preferences: HashMap::new(),
+            },
+        ];
+        let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
+        let end = NaiveDate::from_ymd_opt(2025, 1, 5).unwrap();
+        let schedule = schedule(people, start, end, 2, None).unwrap();
+        assert_eq!(schedule.turns.len(), 2);
+        assert_eq!(schedule.turns[0].person, 0); // Alice is chosen because she wants to be on call
+        assert_eq!(schedule.turns[1].person, 1);
     }
 }

@@ -1,5 +1,5 @@
 use crate::config;
-use crate::config::{OOO, Preference};
+use crate::config::{Ooo, Preference};
 use chrono::NaiveDate;
 use log::info;
 use std::collections::{HashMap, HashSet};
@@ -31,15 +31,15 @@ impl From<&config::Person> for Person {
         if let Some(ooo_vec) = &value.ooo {
             for ooo_entry in ooo_vec {
                 match ooo_entry {
-                    OOO::Day(date) => {
-                        info!("{} is OOO on {}", value.name, date);
-                        ooo.insert(date.clone());
+                    Ooo::Day(date) => {
+                        info!("{} is Ooo on {}", value.name, date);
+                        ooo.insert(*date);
                     }
-                    OOO::Period { from, to } => {
-                        let mut current = from.clone();
+                    Ooo::Period { from, to } => {
+                        let mut current = *from;
                         while current <= *to {
-                            info!("{} is OOO on {}", value.name, current);
-                            ooo.insert(current.clone());
+                            info!("{} is Ooo on {}", value.name, current);
+                            ooo.insert(current);
                             current = current.succ_opt().unwrap();
                         }
                     }
@@ -53,11 +53,11 @@ impl From<&config::Person> for Person {
                 match pref_entry {
                     Preference::Want(date) => {
                         info!("{} wants to be on call on {}", value.name, date);
-                        preferences.insert(date.clone(), PreferenceType::Want);
+                        preferences.insert(*date, PreferenceType::Want);
                     }
                     Preference::NotWant(date) => {
                         info!("{} does not want to be on call on {}", value.name, date);
-                        preferences.insert(date.clone(), PreferenceType::NotWant);
+                        preferences.insert(*date, PreferenceType::NotWant);
                     }
                 }
             }
@@ -65,8 +65,8 @@ impl From<&config::Person> for Person {
 
         Person {
             name: value.name.clone(),
-            ooo: ooo,
-            preferences: preferences,
+            ooo,
+            preferences,
         }
     }
 }

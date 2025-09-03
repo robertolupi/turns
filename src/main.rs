@@ -27,7 +27,7 @@ fn main() {
         }
     };
 
-    let people: Vec<Person> = cfg.people.iter().map(|(_, p)| p.into()).collect();
+    let people: Vec<Person> = cfg.people.values().map(|p| p.into()).collect();
     let start = cfg.schedule.from;
     let end = cfg.schedule.to;
 
@@ -35,8 +35,8 @@ fn main() {
         config::Algo::RoundRobin { turn_length_days } => {
             algo::roundrobin::schedule(people, start, end, turn_length_days)
         },
-        config::Algo::Greedy { turn_length_days } => {
-            algo::greedy::schedule(people, start, end, turn_length_days)
+        config::Algo::Greedy { turn_length_days, preference_weight } => {
+            algo::greedy::schedule(people, start, end, turn_length_days, preference_weight)
         }
     };
 
