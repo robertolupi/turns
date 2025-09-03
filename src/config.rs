@@ -18,6 +18,8 @@ pub enum ConfigError {
     InvalidDateRange,
     #[error("Turn length in days must be positive")]
     InvalidTurnLength,
+    #[error("min_turn_days must be less than or equal to max_turn_days")]
+    InvalidTurnLengthBounds,
     #[error("Ooo period is invalid for person {person_name}: `from` date must be before `to` date")]
     InvalidOooPeriod { person_name: String },
 }
@@ -49,6 +51,10 @@ pub enum Algo {
         #[serde(default)]
         preference_weight: Option<u8>,
     },
+    Balanced {
+        min_turn_days: u8,
+        max_turn_days: u8,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -74,6 +80,17 @@ impl Config {
             Algo::RoundRobin { turn_length_days } | Algo::Greedy { turn_length_days, .. } => {
                 if turn_length_days == 0 {
                     return Err(ConfigError::InvalidTurnLength);
+                }
+            }
+            Algo::Balanced {
+                min_turn_days,
+                max_turn_days,
+            } => {
+                if min_turn_days == 0 || max_turn_days == 0 {
+                    return Err(ConfigError::InvalidTurnLength);
+                }
+                if min_turn_days > max_turn_days {
+                    return Err(ConfigError::InvalidTurnLengthBounds);
                 }
             }
         }

@@ -16,5 +16,6 @@ people:
 schedule:
   from: 2025-08-01
   to: 2025-09-30
-  algo: !Greedy
-    turn_length_days: 7
+  algo: !Balanced
+    min_turn_days: 3
+    max_turn_days: 10

@@ -34,10 +34,15 @@ fn main() {
     let output = match cfg.schedule.algo {
         config::Algo::RoundRobin { turn_length_days } => {
             algo::roundrobin::schedule(people, start, end, turn_length_days)
-        },
-        config::Algo::Greedy { turn_length_days, preference_weight } => {
-            algo::greedy::schedule(people, start, end, turn_length_days, preference_weight)
         }
+        config::Algo::Greedy {
+            turn_length_days,
+            preference_weight,
+        } => algo::greedy::schedule(people, start, end, turn_length_days, preference_weight),
+        config::Algo::Balanced {
+            min_turn_days,
+            max_turn_days,
+        } => algo::balanced::schedule(people, start, end, min_turn_days, max_turn_days),
     };
 
     match output {
