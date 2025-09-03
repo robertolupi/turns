@@ -44,7 +44,11 @@ pub struct Person {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Algo {
     RoundRobin { turn_length_days: u8 },
-    Greedy { turn_length_days: u8 },
+    Greedy {
+        turn_length_days: u8,
+        #[serde(default)]
+        preference_weight: Option<u8>,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -67,7 +71,7 @@ impl Config {
         }
 
         match self.schedule.algo {
-            Algo::RoundRobin { turn_length_days } | Algo::Greedy { turn_length_days } => {
+            Algo::RoundRobin { turn_length_days } | Algo::Greedy { turn_length_days, .. } => {
                 if turn_length_days == 0 {
                     return Err(ConfigError::InvalidTurnLength);
                 }
