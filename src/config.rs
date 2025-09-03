@@ -89,6 +89,9 @@ impl Config {
 }
 
 pub fn parse(config_file: &Path) -> Result<Config, ConfigError> {
+    if !config_file.exists() || !config_file.is_file() {
+        return Err(ConfigError::InvalidPath(config_file.to_path_buf()));
+    }
     let content = std::fs::read_to_string(config_file)?;
     let config: Config = serde_yaml::from_str(&content)?;
     config.validate()?;
@@ -194,5 +197,19 @@ schedule:
         let file = write_config_to_tempfile(config);
         let result = parse(file.path());
         assert!(matches!(result, Err(ConfigError::InvalidOOOPeriod { .. })));
+    }
+
+    #[test]
+    fn test_parse_non_existent_file() {
+        let path = PathBuf::from("non_existent_file.yaml");
+        let result = parse(&path);
+        assert!(matches!(result, Err(ConfigError::InvalidPath(_))));
+    }
+
+    #[test]
+    fn test_parse_directory_path() {
+        let dir = tempfile::tempdir().unwrap();
+        let result = parse(dir.path());
+        assert!(matches!(result, Err(ConfigError::InvalidPath(_))));
     }
 }
