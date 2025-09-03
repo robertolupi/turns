@@ -52,7 +52,7 @@ mod tests {
     use super::*;
     use crate::input::Person;
     use chrono::NaiveDate;
-    use std::collections::HashSet;
+    use std::collections::{HashMap, HashSet};
 
     #[test]
     fn test_simple_schedule() {
@@ -60,10 +60,12 @@ mod tests {
             Person {
                 name: "Alice".to_string(),
                 ooo: HashSet::new(),
+                preferences: HashMap::new(),
             },
             Person {
                 name: "Bob".to_string(),
                 ooo: HashSet::new(),
+                preferences: HashMap::new(),
             },
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
@@ -82,10 +84,12 @@ mod tests {
             Person {
                 name: "Alice".to_string(),
                 ooo: ooo,
+                preferences: HashMap::new(),
             },
             Person {
                 name: "Bob".to_string(),
                 ooo: HashSet::new(),
+                preferences: HashMap::new(),
             },
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
@@ -104,10 +108,12 @@ mod tests {
             Person {
                 name: "Alice".to_string(),
                 ooo: ooo.clone(),
+                preferences: HashMap::new(),
             },
             Person {
                 name: "Bob".to_string(),
                 ooo: ooo.clone(),
+                preferences: HashMap::new(),
             },
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();

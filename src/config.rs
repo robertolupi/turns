@@ -29,9 +29,16 @@ pub enum OOO {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Preference {
+    Want(NaiveDate),
+    NotWant(NaiveDate),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Person {
     pub(crate) name: String,
     pub(crate) ooo: Option<Vec<OOO>>,
+    pub(crate) preferences: Option<Vec<Preference>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -116,6 +123,8 @@ mod tests {
 people:
   alice:
     name: Alice
+    preferences:
+      - !Want 2025-01-10
   bob:
     name: Bob
 schedule:
@@ -135,6 +144,7 @@ schedule:
 people:
   alice:
     name: ""
+    preferences: []
 schedule:
   from: 2025-01-01
   to: 2025-01-31
@@ -152,6 +162,7 @@ schedule:
 people:
   alice:
     name: Alice
+    preferences: []
 schedule:
   from: 2025-01-31
   to: 2025-01-01
@@ -169,6 +180,7 @@ schedule:
 people:
   alice:
     name: Alice
+    preferences: []
 schedule:
   from: 2025-01-01
   to: 2025-01-31
@@ -188,6 +200,7 @@ people:
     name: Alice
     ooo:
       - !Period { from: 2025-01-10, to: 2025-01-05 }
+    preferences: []
 schedule:
   from: 2025-01-01
   to: 2025-01-31

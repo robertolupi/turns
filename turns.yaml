@@ -8,6 +8,9 @@ people:
         to: 2025-09-07
   bob:
     name: Bob
+    preferences:
+      - !Want 2025-09-06
+      - !NotWant 2025-09-01
   charlie:
     name: Charlie
 schedule:
