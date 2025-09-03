@@ -1,6 +1,7 @@
 use crate::input::{Person, PreferenceType};
 use crate::output::{Assignment, Schedule};
 use chrono::{Days, NaiveDate, TimeDelta};
+use log::{debug, info, trace};
 
 use crate::output::ScheduleError;
 
@@ -8,6 +9,7 @@ fn is_ooo_for_turn(person: &Person, start_date: NaiveDate, end_date: NaiveDate) 
     let mut current_date = start_date;
     while current_date < end_date {
         if person.ooo.contains(&current_date) {
+            trace!("{} is OOO on {}", person.name, current_date);
             return true;
         }
         current_date = current_date.succ_opt().unwrap();
@@ -27,6 +29,9 @@ pub fn schedule(
     let mut load: Vec<TimeDelta> = people.iter().map(|_| TimeDelta::zero()).collect();
     let mut last_assignee: Option<usize> = None;
 
+    info!("Starting greedy schedule generation");
+    trace!("Initial load: {:?}", load);
+
     while current_day < end {
         let turn_end_date = std::cmp::min(
             end,
@@ -34,6 +39,7 @@ pub fn schedule(
                 .checked_add_days(Days::new(turn_length_days.into()))
                 .unwrap(),
         );
+        debug!("Planning turn from {} to {}", current_day, turn_end_date);
 
         let mut want_candidates = vec![];
         let mut neutral_candidates = vec![];
@@ -41,10 +47,12 @@ pub fn schedule(
 
         for (i, person) in people.iter().enumerate() {
             if Some(i) == last_assignee {
+                trace!("Skipping {} (last assignee)", person.name);
                 continue;
             }
 
             if is_ooo_for_turn(person, current_day, turn_end_date) {
+                debug!("Skipping {} (OOO)", person.name);
                 continue;
             }
 
@@ -62,25 +70,34 @@ pub fn schedule(
             }
 
             if has_want {
+                trace!("{} has Want preference", person.name);
                 want_candidates.push(i);
             } else if has_not_want {
+                trace!("{} has NotWant preference", person.name);
                 not_want_candidates.push(i);
             } else {
+                trace!("{} has neutral preference", person.name);
                 neutral_candidates.push(i);
             }
         }
+        debug!("Want candidates: {:?}", want_candidates);
+        debug!("Neutral candidates: {:?}", neutral_candidates);
+        debug!("NotWant candidates: {:?}", not_want_candidates);
 
         let candidate = if !want_candidates.is_empty() {
+            debug!("Choosing from Want candidates");
             want_candidates
                 .iter()
                 .min_by_key(|&&p| load[p])
                 .map(|&p| p)
         } else if !neutral_candidates.is_empty() {
+            debug!("Choosing from Neutral candidates");
             neutral_candidates
                 .iter()
                 .min_by_key(|&&p| load[p])
                 .map(|&p| p)
         } else if !not_want_candidates.is_empty() {
+            debug!("Choosing from NotWant candidates");
             not_want_candidates
                 .iter()
                 .min_by_key(|&&p| load[p])
@@ -95,6 +112,10 @@ pub fn schedule(
 
         let assignee = candidate.unwrap();
         last_assignee = Some(assignee);
+        info!(
+            "Assigning {} to turn {} -> {}",
+            people[assignee].name, current_day, turn_end_date
+        );
 
         let actual_turn_end = turn_end_date;
 
@@ -104,6 +125,7 @@ pub fn schedule(
             end: actual_turn_end,
         });
         load[assignee] += actual_turn_end - current_day;
+        trace!("Updated load: {:?}", load);
         current_day = actual_turn_end;
     }
 

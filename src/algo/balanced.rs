@@ -1,11 +1,13 @@
 use crate::input::{Person, PreferenceType};
 use crate::output::{Assignment, Schedule, ScheduleError};
 use chrono::{Days, NaiveDate, TimeDelta};
+use log::{debug, info, trace};
 
 fn is_ooo_for_turn(person: &Person, start_date: NaiveDate, end_date: NaiveDate) -> bool {
     let mut current_date = start_date;
     while current_date < end_date {
         if person.ooo.contains(&current_date) {
+            trace!("{} is OOO on {}", person.name, current_date);
             return true;
         }
         current_date = current_date.succ_opt().unwrap();
@@ -19,13 +21,16 @@ fn calculate_load_variance(load: &[TimeDelta]) -> f64 {
         return 0.0;
     }
     let mean = load.iter().map(|d| d.num_seconds() as f64).sum::<f64>() / n;
-    load.iter()
+    let variance = load
+        .iter()
         .map(|d| {
             let diff = d.num_seconds() as f64 - mean;
             diff * diff
         })
         .sum::<f64>()
-        / n
+        / n;
+    trace!("Load: {:?}, variance: {}", load, variance);
+    variance
 }
 
 pub fn schedule(
@@ -40,11 +45,16 @@ pub fn schedule(
     let mut load: Vec<TimeDelta> = people.iter().map(|_| TimeDelta::zero()).collect();
     let mut last_assignee: Option<usize> = None;
 
+    info!("Starting balanced schedule generation");
+    trace!("Initial load: {:?}", load);
+
     while current_day < end {
-        let mut best_choice: Option<(usize, NaiveDate, f64)> = None;
+        debug!("Planning turn starting from {}", current_day);
+        let mut best_choice: Option<(usize, NaiveDate, i32, f64)> = None;
 
         for (i, person) in people.iter().enumerate() {
             if Some(i) == last_assignee {
+                trace!("Skipping {} (last assignee)", person.name);
                 continue;
             }
 
@@ -57,6 +67,12 @@ pub fn schedule(
                 );
 
                 if is_ooo_for_turn(person, current_day, turn_end) {
+                    trace!(
+                        "Skipping {} for turn {} -> {} (OOO)",
+                        person.name,
+                        current_day,
+                        turn_end
+                    );
                     continue;
                 }
 
@@ -84,29 +100,39 @@ pub fn schedule(
                 let mut next_load = load.clone();
                 next_load[i] += turn_end - current_day;
                 let variance = calculate_load_variance(&next_load);
+                trace!(
+                    "Considering {} for {} -> {} (pref: {}, variance: {})",
+                    person.name,
+                    current_day,
+                    turn_end,
+                    preference_group,
+                    variance
+                );
 
-                let current_best_group = if let Some((_, _, group)) = best_choice {
-                    group as i32
-                } else {
-                    3
-                };
+                if best_choice.is_none() {
+                    best_choice = Some((i, turn_end, preference_group, variance));
+                    continue;
+                }
+
+                let (_, _, current_best_group, current_best_variance) = best_choice.unwrap();
 
                 if preference_group < current_best_group {
-                    best_choice = Some((i, turn_end, preference_group as f64));
-                } else if preference_group == current_best_group {
-                    let current_best_variance = if let Some((_, _, _)) = best_choice {
-                        calculate_load_variance(&load)
-                    } else {
-                        f64::MAX
-                    };
-                    if variance < current_best_variance {
-                        best_choice = Some((i, turn_end, preference_group as f64));
-                    }
+                    trace!("New best choice (better preference group)");
+                    best_choice = Some((i, turn_end, preference_group, variance));
+                } else if preference_group == current_best_group
+                    && variance < current_best_variance
+                {
+                    trace!("New best choice (better variance)");
+                    best_choice = Some((i, turn_end, preference_group, variance));
                 }
             }
         }
 
-        if let Some((assignee, turn_end, _)) = best_choice {
+        if let Some((assignee, turn_end, _, _)) = best_choice {
+            info!(
+                "Assigning {} to turn {} -> {}",
+                people[assignee].name, current_day, turn_end
+            );
             turns.push(Assignment {
                 person: assignee,
                 start: current_day,
@@ -115,6 +141,7 @@ pub fn schedule(
             load[assignee] += turn_end - current_day;
             current_day = turn_end;
             last_assignee = Some(assignee);
+            trace!("Updated load: {:?}", load);
         } else {
             return Err(ScheduleError::NoOneAvailable(current_day));
         }

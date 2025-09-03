@@ -6,6 +6,8 @@ mod output;
 use clap::{Parser, arg};
 use std::path::PathBuf;
 use crate::input::Person;
+use env_logger::Builder;
+use log::LevelFilter;
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -18,6 +20,17 @@ struct Cli {
 
 fn main() {
     let args = Cli::parse();
+
+    let log_level = match args.verbose {
+        0 => LevelFilter::Warn,
+        1 => LevelFilter::Info,
+        2 => LevelFilter::Debug,
+        _ => LevelFilter::Trace,
+    };
+
+    Builder::new()
+        .filter(None, log_level)
+        .init();
 
     let cfg = match config::parse(&args.config) {
         Ok(cfg) => cfg,
