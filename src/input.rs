@@ -3,7 +3,6 @@ use crate::config::OOO;
 use chrono::NaiveDate;
 use log::info;
 use std::collections::HashSet;
-use std::fmt::Formatter;
 use std::hash::Hash;
 
 #[derive(Debug, Clone, Eq, PartialEq)]

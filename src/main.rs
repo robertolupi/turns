@@ -19,14 +19,13 @@ struct Cli {
 fn main() {
     let args = Cli::parse();
 
-    let cfg = config::parse(args.config);
-    println!("{:?}", cfg);
-
-    if cfg.is_err() {
-        return;
-    }
-
-    let cfg = cfg.unwrap();
+    let cfg = match config::parse(&args.config) {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            eprintln!("Error parsing config: {}", e);
+            std::process::exit(1);
+        }
+    };
 
     let people: Vec<Person> = cfg.people.iter().map(|(_, p)| p.into()).collect();
     let start = cfg.schedule.from;
@@ -41,5 +40,11 @@ fn main() {
         }
     };
 
-    println!("{}", output.map_err(|e| e.to_string()).unwrap());
+    match output {
+        Ok(schedule) => println!("{}", schedule),
+        Err(e) => {
+            eprintln!("Error generating schedule: {}", e);
+            std::process::exit(1);
+        }
+    }
 }

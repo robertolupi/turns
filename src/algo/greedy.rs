@@ -1,8 +1,6 @@
-use std::collections::{BinaryHeap, HashMap};
-use chrono::{Days, NaiveDate, TimeDelta};
-use crate::config::Config;
 use crate::input::Person;
 use crate::output::{Assignment, Schedule};
+use chrono::{Days, NaiveDate, TimeDelta};
 
 pub fn schedule(
     people: Vec<Person>,
@@ -19,7 +17,7 @@ pub fn schedule(
         let mut candidate: usize = 0;
         let mut min_load = TimeDelta::MAX;
         for (i, person) in people.iter().enumerate() {
-            if people[i].ooo.contains(&current_day) {
+            if person.ooo.contains(&current_day) {
                 continue;
             }
             if Some(i) == assignee {

@@ -1,8 +1,6 @@
-use crate::config::Config;
 use crate::input::Person;
 use crate::output::{Assignment, Schedule};
 use chrono::{Days, NaiveDate};
-use std::fs::metadata;
 
 pub fn schedule( 
                 people: Vec<Person>,
