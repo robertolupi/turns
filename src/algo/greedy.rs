@@ -2,6 +2,7 @@ use crate::input::{Person, PreferenceType};
 use crate::output::{Assignment, Schedule};
 use chrono::{Days, NaiveDate, TimeDelta};
 use log::{debug, info, trace};
+use std::collections::HashMap;
 
 use crate::output::ScheduleError;
 
@@ -23,10 +24,20 @@ pub fn schedule(
     end: NaiveDate,
     turn_length_days: u8,
     _preference_weight: Option<u8>,
+    initial_load: Option<HashMap<String, TimeDelta>>,
 ) -> Result<Schedule, ScheduleError> {
     let mut turns = vec![];
     let mut current_day = start;
-    let mut load: Vec<TimeDelta> = people.iter().map(|_| TimeDelta::zero()).collect();
+    let mut load: Vec<TimeDelta> = people
+        .iter()
+        .map(|p| {
+            if let Some(ref il) = initial_load {
+                il.get(&p.id).cloned().unwrap_or(TimeDelta::zero())
+            } else {
+                TimeDelta::zero()
+            }
+        })
+        .collect();
     let mut last_assignee: Option<usize> = None;
 
     info!("Starting greedy schedule generation");
@@ -157,7 +168,7 @@ mod tests {
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(2025, 1, 5).unwrap();
-        let schedule = schedule(people, start, end, 2, None).unwrap();
+        let schedule = schedule(people, start, end, 2, None, None).unwrap();
         assert_eq!(schedule.turns.len(), 2);
         assert_eq!(schedule.turns[0].person, 0);
         assert_eq!(schedule.turns[1].person, 1);
@@ -183,7 +194,7 @@ mod tests {
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(2025, 1, 5).unwrap();
-        let schedule = schedule(people, start, end, 2, None).unwrap();
+        let schedule = schedule(people, start, end, 2, None, None).unwrap();
         assert_eq!(schedule.turns.len(), 2);
         assert_eq!(schedule.turns[0].person, 1); // Bob starts because Alice is OOO
         assert_eq!(schedule.turns[1].person, 0);
@@ -207,7 +218,7 @@ mod tests {
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(2025, 1, 10).unwrap();
-        let schedule = schedule(people, start, end, 3, None).unwrap();
+        let schedule = schedule(people, start, end, 3, None, None).unwrap();
         // Expected schedule:
         // Alice: 1/1 - 1/4 (3 days)
         // Bob: 1/4 - 1/7 (3 days)
@@ -238,7 +249,7 @@ mod tests {
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(2025, 1, 5).unwrap();
-        let result = schedule(people, start, end, 2, None);
+        let result = schedule(people, start, end, 2, None, None);
         assert!(matches!(result, Err(ScheduleError::NoOneAvailable(_))));
     }
 
@@ -266,7 +277,7 @@ mod tests {
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(2025, 1, 5).unwrap();
-        let schedule = schedule(people, start, end, 2, None).unwrap();
+        let schedule = schedule(people, start, end, 2, None, None).unwrap();
         assert_eq!(schedule.turns.len(), 2);
         assert_eq!(schedule.turns[0].person, 0); // Alice is chosen because she wants to be on call
         assert_eq!(schedule.turns[1].person, 1);
@@ -302,7 +313,7 @@ mod tests {
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(2025, 1, 5).unwrap();
-        let schedule = schedule(people, start, end, 2, None).unwrap();
+        let schedule = schedule(people, start, end, 2, None, None).unwrap();
         assert_eq!(schedule.turns.len(), 2);
         // Alice: 1/1 -> 1/3
         // Charlie: 1/3 -> 1/5

@@ -1,6 +1,6 @@
 use crate::input::Person;
 use chrono::{NaiveDate, TimeDelta};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use thiserror::Error;
@@ -29,16 +29,18 @@ pub struct Load<'a> {
     pub(crate) days: HashMap<&'a Person, TimeDelta>,
 }
 
-#[derive(Serialize, Debug)]
-struct YamlAssignment<'a> {
-    person: &'a str,
-    start: NaiveDate,
-    end: NaiveDate,
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) struct YamlAssignment<'a> {
+    #[serde(borrow)]
+    pub(crate) person: &'a str,
+    pub(crate) start: NaiveDate,
+    pub(crate) end: NaiveDate,
 }
 
-#[derive(Serialize, Debug)]
-struct YamlSchedule<'a> {
-    schedule: Vec<YamlAssignment<'a>>,
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) struct YamlSchedule<'a> {
+    #[serde(borrow)]
+    pub(crate) schedule: Vec<YamlAssignment<'a>>,
 }
 
 impl Schedule {

@@ -2,6 +2,7 @@ use crate::input::{Person, PreferenceType};
 use crate::output::{Assignment, Schedule, ScheduleError};
 use chrono::{Days, NaiveDate, TimeDelta};
 use log::{debug, info, trace};
+use std::collections::HashMap;
 
 fn is_ooo_for_turn(person: &Person, start_date: NaiveDate, end_date: NaiveDate) -> bool {
     let mut current_date = start_date;
@@ -39,10 +40,20 @@ pub fn schedule(
     end: NaiveDate,
     min_turn_days: u8,
     max_turn_days: u8,
+    initial_load: Option<HashMap<String, TimeDelta>>,
 ) -> Result<Schedule, ScheduleError> {
     let mut turns = vec![];
     let mut current_day = start;
-    let mut load: Vec<TimeDelta> = people.iter().map(|_| TimeDelta::zero()).collect();
+    let mut load: Vec<TimeDelta> = people
+        .iter()
+        .map(|p| {
+            if let Some(ref il) = initial_load {
+                il.get(&p.id).cloned().unwrap_or(TimeDelta::zero())
+            } else {
+                TimeDelta::zero()
+            }
+        })
+        .collect();
     let mut last_assignee: Option<usize> = None;
 
     info!("Starting balanced schedule generation");
@@ -175,7 +186,7 @@ mod tests {
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(2025, 1, 11).unwrap(); // 10 days
-        let schedule = schedule(people, start, end, 3, 7).unwrap();
+        let schedule = schedule(people, start, end, 3, 7, None).unwrap();
 
         // Expect Alice: 6 days, Bob: 4 days
         let alice_load = schedule.turns.iter().filter(|t| t.person == 0).map(|t| (t.end - t.start).num_days()).sum::<i64>();
@@ -209,7 +220,7 @@ mod tests {
         ];
         let start = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
         let end = NaiveDate::from_ymd_opt(2025, 1, 5).unwrap();
-        let schedule = schedule(people, start, end, 1, 3).unwrap();
+        let schedule = schedule(people, start, end, 1, 3, None).unwrap();
         assert_eq!(schedule.turns[0].person, 0); // Alice gets the first turn
     }
 }

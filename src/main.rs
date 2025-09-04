@@ -8,6 +8,10 @@ use std::path::PathBuf;
 use crate::input::Person;
 use env_logger::Builder;
 use log::LevelFilter;
+use std::collections::HashMap;
+use chrono::TimeDelta;
+use crate::output::YamlSchedule;
+use std::fs;
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -17,8 +21,25 @@ struct Cli {
     #[arg(short, long)]
     output: Option<PathBuf>,
 
+    #[arg(long)]
+    previous: Option<PathBuf>,
+
     #[arg(short, long, default_value = "0")]
     verbose: u8,
+}
+
+fn calculate_initial_load(previous_schedule_path: &PathBuf) -> Result<HashMap<String, TimeDelta>, String> {
+    let content = fs::read_to_string(previous_schedule_path)
+        .map_err(|e| format!("Failed to read previous schedule file: {}", e))?;
+    let previous_schedule: YamlSchedule = serde_yaml::from_str(&content)
+        .map_err(|e| format!("Failed to parse previous schedule file: {}", e))?;
+
+    let mut initial_load = HashMap::new();
+    for assignment in previous_schedule.schedule {
+        let duration = assignment.end - assignment.start;
+        *initial_load.entry(assignment.person.to_string()).or_insert(TimeDelta::zero()) += duration;
+    }
+    Ok(initial_load)
 }
 
 fn main() {
@@ -43,22 +64,34 @@ fn main() {
         }
     };
 
+    let initial_load = if let Some(previous_path) = &args.previous {
+        match calculate_initial_load(previous_path) {
+            Ok(load) => Some(load),
+            Err(e) => {
+                eprintln!("Error processing previous schedule: {}", e);
+                std::process::exit(1);
+            }
+        }
+    } else {
+        None
+    };
+
     let people: Vec<Person> = cfg.people.iter().map(|p| p.into()).collect();
     let start = cfg.schedule.from;
     let end = cfg.schedule.to;
 
     let output = match cfg.schedule.algo {
         config::Algo::RoundRobin { turn_length_days } => {
-            algo::roundrobin::schedule(people, start, end, turn_length_days)
+            algo::roundrobin::schedule(people, start, end, turn_length_days, initial_load)
         }
         config::Algo::Greedy {
             turn_length_days,
             preference_weight,
-        } => algo::greedy::schedule(people, start, end, turn_length_days, preference_weight),
+        } => algo::greedy::schedule(people, start, end, turn_length_days, preference_weight, initial_load),
         config::Algo::Balanced {
             min_turn_days,
             max_turn_days,
-        } => algo::balanced::schedule(people, start, end, min_turn_days, max_turn_days),
+        } => algo::balanced::schedule(people, start, end, min_turn_days, max_turn_days, initial_load),
     };
 
     match output {
