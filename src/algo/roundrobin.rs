@@ -17,17 +17,15 @@ pub fn schedule(
     let mut current_day = start;
     let mut assignee: usize = 0;
 
-    if let Some(il) = initial_load {
-        if !il.is_empty() {
+    if let Some(il) = initial_load
+        && !il.is_empty() {
             // Find the person who worked the most in the previous schedule
             let last_on_call = il.iter().max_by_key(|(_, v)| *v).map(|(k, _)| k);
-            if let Some(last_person_id) = last_on_call {
-                if let Some(pos) = people.iter().position(|p| &p.id == last_person_id) {
+            if let Some(last_person_id) = last_on_call
+                && let Some(pos) = people.iter().position(|p| &p.id == last_person_id) {
                     assignee = (pos + 1) % people.len();
                 }
-            }
         }
-    }
 
     while current_day < end {
         let mut candidate = assignee;

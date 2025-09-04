@@ -99,20 +99,17 @@ pub fn schedule(
             debug!("Choosing from Want candidates");
             want_candidates
                 .iter()
-                .min_by_key(|&&p| load[p])
-                .map(|&p| p)
+                .min_by_key(|&&p| load[p]).copied()
         } else if !neutral_candidates.is_empty() {
             debug!("Choosing from Neutral candidates");
             neutral_candidates
                 .iter()
-                .min_by_key(|&&p| load[p])
-                .map(|&p| p)
+                .min_by_key(|&&p| load[p]).copied()
         } else if !not_want_candidates.is_empty() {
             debug!("Choosing from NotWant candidates");
             not_want_candidates
                 .iter()
-                .min_by_key(|&&p| load[p])
-                .map(|&p| p)
+                .min_by_key(|&&p| load[p]).copied()
         } else {
             None
         };
