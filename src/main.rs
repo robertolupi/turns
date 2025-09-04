@@ -95,22 +95,32 @@ fn main() {
     };
 
     match output {
-        Ok(schedule) => match schedule.to_yaml() {
-            Ok(yaml) => {
-                if let Some(output_path) = args.output {
-                    if let Err(e) = std::fs::write(output_path, yaml) {
-                        eprintln!("Error writing to output file: {}", e);
+        Ok(schedule) => {
+            if let Some(output_path) = args.output {
+                match schedule.to_yaml() {
+                    Ok(yaml) => {
+                        if let Err(e) = std::fs::write(output_path, yaml) {
+                            eprintln!("Error writing to output file: {}", e);
+                            std::process::exit(1);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Error serializing to YAML: {}", e);
                         std::process::exit(1);
                     }
-                } else {
-                    println!("{}", yaml);
                 }
+            } else if args.verbose > 0 {
+                match schedule.to_yaml() {
+                    Ok(yaml) => println!("{}", yaml),
+                    Err(e) => {
+                        eprintln!("Error serializing to YAML: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+            } else {
+                println!("{}", schedule);
             }
-            Err(e) => {
-                eprintln!("Error serializing to YAML: {}", e);
-                std::process::exit(1);
-            }
-        },
+        }
         Err(e) => {
             eprintln!("Error generating schedule: {}", e);
             std::process::exit(1);
