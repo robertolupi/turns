@@ -1,5 +1,6 @@
 use crate::input::Person;
 use chrono::{NaiveDate, TimeDelta};
+use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use thiserror::Error;
@@ -28,6 +29,18 @@ pub struct Load<'a> {
     pub(crate) days: HashMap<&'a Person, TimeDelta>,
 }
 
+#[derive(Serialize, Debug)]
+struct YamlAssignment<'a> {
+    person: &'a str,
+    start: NaiveDate,
+    end: NaiveDate,
+}
+
+#[derive(Serialize, Debug)]
+struct YamlSchedule<'a> {
+    schedule: Vec<YamlAssignment<'a>>,
+}
+
 impl Schedule {
     fn load(&self) -> Load<'_> {
         let mut days: HashMap<&Person, TimeDelta> = HashMap::new();
@@ -38,6 +51,27 @@ impl Schedule {
         }
         Load { days }
     }
+
+    pub(crate) fn to_yaml(&self) -> Result<String, serde_yaml::Error> {
+        let assignments: Vec<YamlAssignment> = self
+            .turns
+            .iter()
+            .map(|turn| {
+                let person = &self.people[turn.person];
+                YamlAssignment {
+                    person: &person.id,
+                    start: turn.start,
+                    end: turn.end,
+                }
+            })
+            .collect();
+
+        let yaml_schedule = YamlSchedule {
+            schedule: assignments,
+        };
+
+        serde_yaml::to_string(&yaml_schedule)
+    }
 }
 
 impl Display for Schedule {
@@ -46,7 +80,7 @@ impl Display for Schedule {
             let length = turn.end - turn.start;
             writeln!(
                 f,
-                "{}\t{} - {} ({} days)",
+                "{}	{} - {} ({} days)",
                 self.people[turn.person].name,
                 turn.start,
                 turn.end,

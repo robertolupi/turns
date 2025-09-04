@@ -14,6 +14,9 @@ struct Cli {
     #[arg(short, long, default_value = "turns.yaml")]
     config: PathBuf,
 
+    #[arg(short, long)]
+    output: Option<PathBuf>,
+
     #[arg(short, long, default_value = "0")]
     verbose: u8,
 }
@@ -40,7 +43,7 @@ fn main() {
         }
     };
 
-    let people: Vec<Person> = cfg.people.values().map(|p| p.into()).collect();
+    let people: Vec<Person> = cfg.people.iter().map(|p| p.into()).collect();
     let start = cfg.schedule.from;
     let end = cfg.schedule.to;
 
@@ -59,7 +62,22 @@ fn main() {
     };
 
     match output {
-        Ok(schedule) => println!("{}", schedule),
+        Ok(schedule) => match schedule.to_yaml() {
+            Ok(yaml) => {
+                if let Some(output_path) = args.output {
+                    if let Err(e) = std::fs::write(output_path, yaml) {
+                        eprintln!("Error writing to output file: {}", e);
+                        std::process::exit(1);
+                    }
+                } else {
+                    println!("{}", yaml);
+                }
+            }
+            Err(e) => {
+                eprintln!("Error serializing to YAML: {}", e);
+                std::process::exit(1);
+            }
+        },
         Err(e) => {
             eprintln!("Error generating schedule: {}", e);
             std::process::exit(1);

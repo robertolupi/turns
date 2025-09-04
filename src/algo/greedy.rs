@@ -143,11 +143,13 @@ mod tests {
     fn test_simple_schedule() {
         let people = vec![
             Person {
+                id: "alice".to_string(),
                 name: "Alice".to_string(),
                 ooo: HashSet::new(),
                 preferences: HashMap::new(),
             },
             Person {
+                id: "bob".to_string(),
                 name: "Bob".to_string(),
                 ooo: HashSet::new(),
                 preferences: HashMap::new(),
@@ -167,11 +169,13 @@ mod tests {
         ooo.insert(NaiveDate::from_ymd_opt(2025, 1, 1).unwrap());
         let people = vec![
             Person {
+                id: "alice".to_string(),
                 name: "Alice".to_string(),
                 ooo,
                 preferences: HashMap::new(),
             },
             Person {
+                id: "bob".to_string(),
                 name: "Bob".to_string(),
                 ooo: HashSet::new(),
                 preferences: HashMap::new(),
@@ -189,11 +193,13 @@ mod tests {
     fn test_load_balancing() {
         let people = vec![
             Person {
+                id: "alice".to_string(),
                 name: "Alice".to_string(),
                 ooo: HashSet::new(),
                 preferences: HashMap::new(),
             },
             Person {
+                id: "bob".to_string(),
                 name: "Bob".to_string(),
                 ooo: HashSet::new(),
                 preferences: HashMap::new(),
@@ -218,11 +224,13 @@ mod tests {
         ooo.insert(NaiveDate::from_ymd_opt(2025, 1, 1).unwrap());
         let people = vec![
             Person {
+                id: "alice".to_string(),
                 name: "Alice".to_string(),
                 ooo: ooo.clone(),
                 preferences: HashMap::new(),
             },
             Person {
+                id: "bob".to_string(),
                 name: "Bob".to_string(),
                 ooo: ooo.clone(),
                 preferences: HashMap::new(),
@@ -244,11 +252,13 @@ mod tests {
 
         let people = vec![
             Person {
+                id: "alice".to_string(),
                 name: "Alice".to_string(),
                 ooo: HashSet::new(),
                 preferences: alice_prefs,
             },
             Person {
+                id: "bob".to_string(),
                 name: "Bob".to_string(),
                 ooo: HashSet::new(),
                 preferences: HashMap::new(),
@@ -272,16 +282,19 @@ mod tests {
 
         let people = vec![
             Person {
+                id: "alice".to_string(),
                 name: "Alice".to_string(),
                 ooo: HashSet::new(),
                 preferences: HashMap::new(),
             },
             Person {
+                id: "bob".to_string(),
                 name: "Bob".to_string(),
                 ooo: HashSet::new(),
                 preferences: bob_prefs,
             },
              Person {
+                id: "charlie".to_string(),
                 name: "Charlie".to_string(),
                 ooo: HashSet::new(),
                 preferences: HashMap::new(),

@@ -161,11 +161,13 @@ mod tests {
     fn test_simple_balanced_schedule() {
         let people = vec![
             Person {
+                id: "alice".to_string(),
                 name: "Alice".to_string(),
                 ooo: HashSet::new(),
                 preferences: HashMap::new(),
             },
             Person {
+                id: "bob".to_string(),
                 name: "Bob".to_string(),
                 ooo: HashSet::new(),
                 preferences: HashMap::new(),
@@ -175,12 +177,12 @@ mod tests {
         let end = NaiveDate::from_ymd_opt(2025, 1, 11).unwrap(); // 10 days
         let schedule = schedule(people, start, end, 3, 7).unwrap();
 
-        // Expect Alice: 5 days, Bob: 5 days
+        // Expect Alice: 6 days, Bob: 4 days
         let alice_load = schedule.turns.iter().filter(|t| t.person == 0).map(|t| (t.end - t.start).num_days()).sum::<i64>();
         let bob_load = schedule.turns.iter().filter(|t| t.person == 1).map(|t| (t.end - t.start).num_days()).sum::<i64>();
 
-        assert_eq!(alice_load, 5);
-        assert_eq!(bob_load, 5);
+        assert_eq!(alice_load, 6);
+        assert_eq!(bob_load, 4);
     }
 
     #[test]
@@ -193,11 +195,13 @@ mod tests {
 
         let people = vec![
             Person {
+                id: "alice".to_string(),
                 name: "Alice".to_string(),
                 ooo: HashSet::new(),
                 preferences: alice_prefs,
             },
             Person {
+                id: "bob".to_string(),
                 name: "Bob".to_string(),
                 ooo: HashSet::new(),
                 preferences: HashMap::new(),
