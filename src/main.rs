@@ -13,17 +13,22 @@ use chrono::TimeDelta;
 use crate::output::YamlSchedule;
 use std::fs;
 
+/// Schedule people for on-call rotations
 #[derive(Parser, Debug)]
 struct Cli {
+    /// Configuration file
     #[arg(short, long, default_value = "turns.yaml")]
     config: PathBuf,
 
+    /// Output file
     #[arg(short, long)]
     output: Option<PathBuf>,
 
+    /// Output from a previous schedule, to calculate initial load
     #[arg(long)]
     previous: Option<PathBuf>,
 
+    /// Verbose output (0=warn, 1=info, 2=debug, 3=trace)
     #[arg(short, long, default_value = "0")]
     verbose: u8,
 }
